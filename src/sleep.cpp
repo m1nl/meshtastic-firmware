@@ -45,6 +45,9 @@ Observable<void *> notifyDeepSleep;
 Observable<void *> notifyReboot;
 
 #ifdef ARCH_ESP32
+// Wake cause when returning from a deep sleep
+esp_sleep_source_t wakeCause;
+
 /// Called to tell observers that light sleep is about to begin
 Observable<void *> notifyLightSleep;
 
@@ -65,7 +68,6 @@ bool shouldLoraWake(uint32_t msecToWake);
 
 // deep sleep support
 RTC_DATA_ATTR int bootCount = 0;
-esp_sleep_source_t wakeCause;
 
 // -----------------------------------------------------------------------------
 // Application
