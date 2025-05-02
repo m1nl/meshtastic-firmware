@@ -399,10 +399,12 @@ void doLightSleep(uint32_t sleepMsec)
 #endif
 
 #ifdef INPUTDRIVER_ENCODER_BTN
-    gpio_wakeup_enable((gpio_num_t)INPUTDRIVER_ENCODER_BTN, GPIO_INTR_LOW_LEVEL);
+    res = gpio_wakeup_enable((gpio_num_t)INPUTDRIVER_ENCODER_BTN, GPIO_INTR_LOW_LEVEL);
+    assert(res == ESP_OK);
 #endif
 #if defined(T_WATCH_S3) || defined(ELECROW)
-    gpio_wakeup_enable((gpio_num_t)SCREEN_TOUCH_INT, GPIO_INTR_LOW_LEVEL);
+    res = gpio_wakeup_enable((gpio_num_t)SCREEN_TOUCH_INT, GPIO_INTR_LOW_LEVEL);
+    assert(res == ESP_OK);
 #endif
 
     res = esp_sleep_enable_gpio_wakeup();
