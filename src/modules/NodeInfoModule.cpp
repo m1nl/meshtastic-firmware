@@ -119,8 +119,16 @@ int32_t NodeInfoModule::runOnce()
     currentGeneration = radioGeneration;
 
     if (airTime->isTxAllowedAirUtil() && config.device.role != meshtastic_Config_DeviceConfig_Role_CLIENT_HIDDEN) {
-        LOG_INFO("Send our nodeinfo to mesh (wantReplies=%d)", requestReplies);
-        sendOurNodeInfo(NODENUM_BROADCAST, requestReplies); // Send our info (don't request replies)
+        LOG_INFO("Send our nodeinfo to primary channel (wantReplies=%d)", requestReplies);
+        sendOurNodeInfo(NODENUM_BROADCAST, requestReplies); // Send our info to primary channel (don't request replies)
+
+        for (ChannelIndex channel = 1; channel < channels.getNumChannels(); channel++) {
+            if (channels.isDefaultChannel(channel)) {
+                LOG_INFO("Send our nodeinfo to default channel (wantReplies=%d) (channel=%d)", requestReplies, channel);
+                sendOurNodeInfo(NODENUM_BROADCAST, requestReplies,
+                                channel); // Send our info to default channels (don't request replies)
+            }
+        }
     }
     return Default::getConfiguredOrDefaultMs(config.device.node_info_broadcast_secs, default_node_info_broadcast_secs);
 }
