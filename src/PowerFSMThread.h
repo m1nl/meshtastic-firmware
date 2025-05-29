@@ -13,7 +13,7 @@ class PowerFSMThread : public OSThread
 {
   public:
     // callback returns the period for the next callback invocation (or 0 if we should no longer be called)
-    PowerFSMThread() : OSThread("PowerFSM") {}
+    PowerFSMThread() : OSThread("PowerFSM") { timeLastPowered = millis(); }
 
   protected:
     int32_t runOnce() override
