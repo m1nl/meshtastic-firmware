@@ -79,7 +79,7 @@ bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
               p.altitude_geoidal_separation, p.PDOP, p.HDOP, p.VDOP, p.sats_in_view, p.fix_quality, p.fix_type, p.timestamp,
               p.time);
 
-    if (p.time && channels.getByIndex(mp.channel).role == meshtastic_Channel_Role_PRIMARY) {
+    if (p.time) {
         bool force = false;
 
 #ifdef T_WATCH_S3
@@ -88,8 +88,11 @@ bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
         // will always be an equivalent or lesser RTCQuality (RTCQualityNTP or RTCQualityNet).
         force = true;
 #endif
-        // Set from phone RTC Quality to RTCQualityNTP since it should be approximately so
-        trySetRtc(p, isLocal, force);
+        // only update time if GPS is enabled or we're getting it from network, otherwise we're getting stale data
+        if (!isLocal || config.position.gps_enabled) {
+            // Set from phone RTC Quality to RTCQualityNTP since it should be approximately so
+            trySetRtc(p, isLocal, force);
+        }
     }
 
     nodeDB->updatePosition(getFrom(&mp), p);
