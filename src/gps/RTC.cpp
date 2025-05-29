@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+RTC_DATA_ATTR time_t lastValueSetFromPhoneNtpOrGps = 0;
+
 static RTCQuality currentQuality = RTCQualityNone;
 uint32_t lastSetFromPhoneNtpOrGps = 0;
 
@@ -116,6 +118,10 @@ bool perhapsSetRTC(RTCQuality q, const struct timeval *tv, bool forceUpdate)
         return false;
     }
 #endif
+    if (tv->tv_sec <= lastValueSetFromPhoneNtpOrGps) {
+        LOG_WARN("Ignore time (%ld) before or equal to time last set (%ld)!", printableEpoch, lastValueSetFromPhoneNtpOrGps);
+        return false;
+    }
 
     bool shouldSet;
     if (forceUpdate) {
@@ -128,8 +134,7 @@ bool perhapsSetRTC(RTCQuality q, const struct timeval *tv, bool forceUpdate)
     } else if (q == RTCQualityGPS) {
         shouldSet = true;
         LOG_DEBUG("Reapply GPS time: %ld secs", printableEpoch);
-    } else if (q == RTCQualityNTP && !Throttle::isWithinTimespanMs(lastSetMsec, (12 * 60 * 60 * 1000UL))) {
-        // Every 12 hrs we will slam in a new NTP or Phone GPS / NTP time, to correct for local RTC clock drift
+    } else if (q == RTCQualityNTP) {
         shouldSet = true;
         LOG_DEBUG("Reapply external time to correct clock drift %ld secs", printableEpoch);
     } else {
@@ -142,6 +147,8 @@ bool perhapsSetRTC(RTCQuality q, const struct timeval *tv, bool forceUpdate)
         lastSetMsec = now;
         if (currentQuality >= RTCQualityNTP) {
             lastSetFromPhoneNtpOrGps = now;
+            LOG_DEBUG("Previous value of lastValueSetFromPhoneNtpOrGps: %d", lastValueSetFromPhoneNtpOrGps);
+            lastValueSetFromPhoneNtpOrGps = tv->tv_sec;
         }
 
         // This delta value works on all platforms
