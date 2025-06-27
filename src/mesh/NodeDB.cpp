@@ -1424,6 +1424,21 @@ bool NodeDB::saveToDiskNoRetry(int saveWhat)
         success &= saveProto(configFileName, meshtastic_LocalConfig_size, &meshtastic_LocalConfig_msg, &config);
     }
 
+    if (saveWhat & SEGMENT_BLUETOOTH) {
+        LOG_INFO("Erase BLE bonds");
+#ifdef ARCH_ESP32
+        // This will erase what's in NVS including ssl keys, persistent variables and ble pairing
+        nvs_flash_erase();
+#endif
+#ifdef ARCH_NRF52
+        LOG_INFO("Clear bluetooth bonds!");
+        bond_print_list(BLE_GAP_ROLE_PERIPH);
+        bond_print_list(BLE_GAP_ROLE_CENTRAL);
+        Bluefruit.Periph.clearBonds();
+        Bluefruit.Central.clearBonds();
+#endif
+    }
+
     if (saveWhat & SEGMENT_MODULECONFIG) {
         moduleConfig.has_canned_message = true;
         moduleConfig.has_external_notification = true;
