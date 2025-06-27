@@ -822,6 +822,7 @@ void AdminModule::handleSetConfig(const meshtastic_Config &c)
         LOG_INFO("Set config: Bluetooth");
         config.has_bluetooth = true;
         config.bluetooth = c.payload_variant.bluetooth;
+        changes |= SEGMENT_BLUETOOTH;
         break;
     case meshtastic_Config_security_tag:
         LOG_INFO("Set config: Security");
