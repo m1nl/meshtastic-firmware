@@ -82,6 +82,7 @@ DeviceState versions used to be defined in the .proto file but really only this 
 #define SEGMENT_DEVICESTATE 4
 #define SEGMENT_CHANNELS 8
 #define SEGMENT_NODEDATABASE 16
+#define SEGMENT_BLUETOOTH 32
 
 #define DEVICESTATE_CUR_VER 24
 #define DEVICESTATE_MIN_VER 24
