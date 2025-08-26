@@ -269,38 +269,53 @@ void RadioLibInterface::onNotify(uint32_t notification)
         startReceive();
         setTransmitDelay();
         break;
-    case TRANSMIT_DELAY_COMPLETED:
-
+    case TRANSMIT_DELAY_COMPLETED: {
         // If we are not currently in receive mode, then restart the random delay (this can happen if the main thread
         // has placed the unit into standby)  FIXME, how will this work if the chipset is in sleep mode?
-        if (!txQueue.empty()) {
-            if (!canSendImmediately()) {
-                setTransmitDelay(); // currently Rx/Tx-ing: reset random delay
-            } else {
-                meshtastic_MeshPacket *txp = txQueue.getFront();
-                assert(txp);
-                long delay_remaining = txp->tx_after ? txp->tx_after - millis() : 0;
-                if (delay_remaining > 0) {
-                    // There's still some delay pending on this packet, so resume waiting for it to elapse
-                    notifyLater(delay_remaining, TRANSMIT_DELAY_COMPLETED, false);
-                } else {
-                    if (isChannelActive()) { // check if there is currently a LoRa packet on the channel
-                        startReceive();      // try receiving this packet, afterwards we'll be trying to transmit again
-                        setTransmitDelay();
-                    } else {
-                        // Send any outgoing packets we have ready as fast as possible to keep the time between channel scan and
-                        // actual transmission as short as possible
-                        txp = txQueue.dequeue();
-                        assert(txp);
-                        startSend(txp);
-                        LOG_DEBUG("%d packets remain in the TX queue", txQueue.getMaxLen() - txQueue.getFree());
-                    }
-                }
-            }
-        } else {
-            // Do nothing, because the queue is empty
+        if (txQueue.empty()) {
+            break;
         }
+
+        meshtastic_MeshPacket *txp = txQueue.getFront();
+        assert(txp);
+
+        long delay_remaining = txp->tx_after ? txp->tx_after - millis() : 0;
+
+        if (delay_remaining > 0) {
+            // There's still some delay pending on this packet, so resume waiting for it to elapse
+            notifyLater(delay_remaining, TRANSMIT_DELAY_COMPLETED, false);
+            break;
+        }
+
+        if (!canSendImmediately()) {
+            setTransmitDelay(); // currently Rx/Tx-ing: reset random delay
+            break;
+        }
+
+        if (isChannelActive()) { // check if there is currently a LoRa packet on the channel
+            startReceive();      // try receiving this packet, afterwards we'll be trying to transmit again
+            setTransmitDelay();
+            break;
+        }
+
+        // Send any outgoing packets we have ready as fast as possible to keep the time between channel scan
+        // and actual transmission as short as possible
+        txp = txQueue.dequeue();
+        assert(txp);
+
+        bool sent = startSend(txp);
+        LOG_INFO("%d packets remain in the TX queue", txQueue.getMaxLen() - txQueue.getFree());
+
+        if (!sent) {
+            LOG_WARN("Packet 0x%08x was not sent", txp->id);
+            break;
+        }
+
+        // Packet has been sent, count it toward our TX airtime utilization.
+        uint32_t xmitMsec = getPacketTime(txp);
+        airTime->logAirtime(TX_LOG, xmitMsec);
         break;
+    }
     default:
         assert(0); // We expected to receive a valid notification from the ISR
     }
@@ -320,7 +335,7 @@ void RadioLibInterface::setTransmitDelay()
     if (p->tx_after) {
         unsigned long add_delay = p->rx_rssi ? getTxDelayMsecWeighted(p) : getTxDelayMsec();
         unsigned long now = millis();
-        p->tx_after = min(max(p->tx_after + add_delay, now + add_delay), now + 2 * getTxDelayMsecWeightedWorst(p->rx_snr));
+        p->tx_after = min(max((unsigned long)p->tx_after, now + add_delay), now + 2 * getTxDelayMsecWeightedWorst(p->rx_snr));
         notifyLater(p->tx_after - now, TRANSMIT_DELAY_COMPLETED, false);
     } else if (p->rx_snr == 0 && p->rx_rssi == 0) {
         /* We assume if rx_snr = 0 and rx_rssi = 0, the packet was generated locally.
