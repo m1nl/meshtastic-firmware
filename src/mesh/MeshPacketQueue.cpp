@@ -1,9 +1,8 @@
 #include "MeshPacketQueue.h"
 #include "NodeDB.h"
 #include "configuration.h"
-#include <assert.h>
-
 #include <algorithm>
+#include <assert.h>
 
 /// @return the priority of the specified packet
 inline uint32_t getPriority(const meshtastic_MeshPacket *p)
@@ -178,6 +177,29 @@ bool MeshPacketQueue::replaceLowerPriorityPacket(meshtastic_MeshPacket *p)
                      refPacket->id, p->id);
             queue.erase(it);
             packetPool.release(refPacket);
+            // Insert the new packet in the correct order
+            enqueue(p);
+            return true;
+        }
+    }
+
+    if (backPacket->tx_after) {
+        // Check if there's a late packet at the queue end
+        auto now = millis();
+        if (backPacket->tx_after < now) {
+            int32_t dt = (int32_t)(backPacket->tx_after - now);
+            if (p->tx_after) {
+                LOG_WARN("Dropping late packet 0x%08x with TX delay %dms to make room in the TX queue for packet 0x%08x with "
+                         "TX delay %ums",
+                         backPacket->id, dt, p->id, p->tx_after - now);
+
+            } else {
+                LOG_WARN("Dropping late packet 0x%08x with TX delay %dms to make room in the TX queue for packet 0x%08x "
+                         "with no TX delay",
+                         backPacket->id, dt, p->id);
+            }
+            queue.pop_back();
+            packetPool.release(backPacket);
             // Insert the new packet in the correct order
             enqueue(p);
             return true;
