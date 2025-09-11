@@ -42,3 +42,5 @@
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
 
 #define HAS_32768HZ 1
+
+#define CELL_TYPE_LIPO
