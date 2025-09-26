@@ -47,6 +47,8 @@ static_assert(sizeof(meshtastic_NodeInfoLite) <= 200, "NodeInfoLite size increas
 #define MAX_NUM_NODES 10
 #elif defined(ARCH_NRF52)
 #define MAX_NUM_NODES 80
+#elif defined(CONFIG_SPIRAM) && defined(ARCH_ESP32) && defined(BOARD_HAS_PSRAM)
+#define MAX_NUM_NODES 250
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 #include "Esp.h"
 static inline int get_max_num_nodes()

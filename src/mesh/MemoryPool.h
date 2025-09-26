@@ -8,6 +8,9 @@
 #include "PointerQueue.h"
 #include "configuration.h" // For LOG_WARN, LOG_DEBUG, LOG_HEAP
 
+#define PSRAM_ALLOCATION_THRESHOLD (2 * 1024)
+#define LOW_HEAP_THRESHOLD (20 * 1024)
+
 template <class T> class Allocator
 {
 
@@ -81,16 +84,24 @@ template <class T> class Allocator
 /**
  * An allocator that just uses regular free/malloc
  */
-template <class T> class MemoryDynamic : public Allocator<T>
+template <class T, int MaxSize = 0> class MemoryDynamic : public Allocator<T>
 {
+  private:
+    int numUsed;
+
   public:
+    MemoryDynamic() : numUsed(0) {}
+
     /// Return a buffer for use by others
     virtual void release(T *p) override
     {
-        if (p == nullptr)
+        if (!p)
             return;
 
         LOG_HEAP("Freeing 0x%x", p);
+
+        numUsed--;
+        assert(numUsed >= 0);
 
         free(p);
     }
@@ -99,8 +110,30 @@ template <class T> class MemoryDynamic : public Allocator<T>
     // Alloc some storage
     virtual T *alloc(TickType_t maxWait) override
     {
-        T *p = (T *)malloc(sizeof(T));
+        T *p = nullptr;
+
+        if (MaxSize != 0 && numUsed >= MaxSize) {
+            return nullptr;
+        }
+
+#if defined(ARCH_ESP32) && defined(CONFIG_SPIRAM) && defined(BOARD_HAS_PSRAM)
+        // attempt to allocate in PSRAM if size is > PSRAM_ALLOCATION_THRESHOLD or available memory is low
+        if (sizeof(T) > PSRAM_ALLOCATION_THRESHOLD || ESP.getFreeHeap() < LOW_HEAP_THRESHOLD) {
+            p = static_cast<T *>(ps_malloc(sizeof(T)));
+        }
+
+        // If the allocation in PSRAM failed (or PSRAM not enabled), try to
+        // allocate from the default memory pool.
+        if (p == nullptr) {
+#endif // defined(ARCH_ESP32) && defined(CONFIG_SPIRAM) && defined(BOARD_HAS_PSRAM)
+            p = static_cast<T *>(malloc(sizeof(T)));
+#if defined(ARCH_ESP32) && defined(CONFIG_SPIRAM) && defined(BOARD_HAS_PSRAM)
+        }
+#endif
+
         assert(p);
+        numUsed++;
+
         return p;
     }
 };

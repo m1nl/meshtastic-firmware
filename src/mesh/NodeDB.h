@@ -10,6 +10,7 @@
 
 #include "MeshTypes.h"
 #include "NodeStatus.h"
+#include "PSRAMAllocator.h"
 #include "configuration.h"
 #include "mesh-pb-constants.h"
 #include "mesh/generated/meshtastic/mesh.pb.h" // For CriticalErrorCode
@@ -135,7 +136,7 @@ class NodeDB
     // Note: these two references just point into our static array we serialize to/from disk
 
   public:
-    std::vector<meshtastic_NodeInfoLite> *meshNodes;
+    std::vector<meshtastic_NodeInfoLite, PSRAMAllocator<meshtastic_NodeInfoLite>> *meshNodes;
     bool updateGUI = false; // we think the gui should definitely be redrawn, screen will clear this once handled
     meshtastic_NodeInfoLite *updateGUIforNode = NULL; // if currently showing this node, we think you should update the GUI
     Observable<const meshtastic::NodeStatus *> newStatus;
