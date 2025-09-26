@@ -5,6 +5,7 @@
 #define PB_MESHTASTIC_MESHTASTIC_DEVICEONLY_PB_H_INCLUDED
 #include <pb.h>
 #include <vector>
+#include "PSRAMAllocator.h"
 #include "meshtastic/channel.pb.h"
 #include "meshtastic/config.pb.h"
 #include "meshtastic/localonly.pb.h"
@@ -148,7 +149,7 @@ typedef struct _meshtastic_NodeDatabase {
  NodeDB.cpp in the device code. */
     uint32_t version;
     /* New lite version of NodeDB to decrease memory footprint */
-    std::vector<meshtastic_NodeInfoLite> nodes;
+    std::vector<meshtastic_NodeInfoLite, PSRAMAllocator<meshtastic_NodeInfoLite>> nodes;
 } meshtastic_NodeDatabase;
 
 /* The on-disk saved channels */
