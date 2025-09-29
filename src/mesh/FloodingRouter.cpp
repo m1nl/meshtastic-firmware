@@ -67,7 +67,7 @@ bool FloodingRouter::shouldFilterReceived(const meshtastic_MeshPacket *p)
 bool FloodingRouter::perhapsHandleUpgradedPacket(const meshtastic_MeshPacket *p)
 {
     // isRebroadcaster() is duplicated in perhapsRebroadcast(), but this avoids confusing log messages
-    if (isRebroadcaster() && iface && p->hop_limit > 0) {
+    if (isRebroadcaster(p) && iface && p->hop_limit > 0) {
         // If we overhear a duplicate copy of the packet with more hops left than the one we are waiting to
         // rebroadcast, then remove the packet currently sitting in the TX queue and use this one instead.
         uint8_t dropThreshold = p->hop_limit; // remove queued packets that have fewer hops remaining
@@ -135,10 +135,13 @@ void FloodingRouter::perhapsCancelDupe(const meshtastic_MeshPacket *p)
     }
 }
 
-bool FloodingRouter::isRebroadcaster()
+bool FloodingRouter::isRebroadcaster(const meshtastic_MeshPacket *p)
 {
-    return config.device.role != meshtastic_Config_DeviceConfig_Role_CLIENT_MUTE &&
-           config.device.rebroadcast_mode != meshtastic_Config_DeviceConfig_RebroadcastMode_NONE;
+    if (config.device.rebroadcast_mode == meshtastic_Config_DeviceConfig_RebroadcastMode_NONE) {
+        return false;
+    }
+
+    return !channels.isDefaultChannel(p->channel) || config.device.role != meshtastic_Config_DeviceConfig_Role_CLIENT_MUTE;
 }
 
 void FloodingRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtastic_Routing *c)

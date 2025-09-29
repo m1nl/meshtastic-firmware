@@ -74,5 +74,5 @@ class FloodingRouter : public Router
     void perhapsCancelDupe(const meshtastic_MeshPacket *p);
 
     // Return true if we are a rebroadcaster
-    bool isRebroadcaster();
+    bool isRebroadcaster(const meshtastic_MeshPacket *p);
 };

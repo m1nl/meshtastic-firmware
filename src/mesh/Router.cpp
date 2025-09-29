@@ -180,6 +180,11 @@ meshtastic_MeshPacket *Router::allocForSending()
 {
     meshtastic_MeshPacket *p = packetPool.allocZeroed();
 
+    if (!p) {
+        LOG_ERROR("Unable to allocate memory for packet");
+        return nullptr;
+    }
+
     p->which_payload_variant = meshtastic_MeshPacket_decoded_tag; // Assume payload is decoded at start.
     p->from = nodeDB->getNodeNum();
     p->to = NODENUM_BROADCAST;
@@ -692,6 +697,11 @@ void Router::handleReceived(meshtastic_MeshPacket *p, RxSource src)
     DEBUG_HEAP_BEFORE;
     p_encrypted = packetPool.allocCopy(*p);
     DEBUG_HEAP_AFTER("Router::handleReceived", p_encrypted);
+
+    if (!p_encrypted) {
+        LOG_ERROR("Unable to allocate memory for packet");
+        return;
+    }
 
     // Take those raw bytes and convert them back into a well structured protobuf we can understand
     auto decodedState = perhapsDecode(p);
