@@ -161,7 +161,7 @@ AirTime::AirTime() : concurrency::OSThread("AirTime"), airtimes({}) {}
 
 int32_t AirTime::runOnce()
 {
-    secSinceBoot++;
+    secSinceBoot = millis() / 1000;
 
     uint8_t utilPeriod = this->getPeriodUtilMinute();
     uint8_t utilPeriodTX = this->getPeriodUtilHour();
@@ -206,5 +206,5 @@ int32_t AirTime::runOnce()
             this->utilizationTX[utilPeriodTX] = 0;
         }
     }
-    return (1000 * 1);
+    return (100 * 1);
 }
