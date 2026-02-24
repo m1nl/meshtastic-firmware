@@ -74,3 +74,5 @@
 #define GPS_TX_PIN (38) // This is for bits going TOWARDS the CPU
 #define GPS_RX_PIN (39) // This is for bits going TOWARDS the GPS
 #define GPS_THREAD_INTERVAL 50
+
+#define OCV_ARRAY 4190, 4060, 4020, 3980, 3890, 3860, 3820, 3740, 3600, 3510, 3100
