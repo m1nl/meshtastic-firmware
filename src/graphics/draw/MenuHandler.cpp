@@ -254,7 +254,7 @@ void menuHandler::FrequencySlotPicker()
 {
 
     enum ReplyOptions : int { Back = -1 };
-    constexpr int MAX_CHANNEL_OPTIONS = 202;
+    constexpr int MAX_CHANNEL_OPTIONS = 10;
     static const char *optionsArray[MAX_CHANNEL_OPTIONS];
     static int optionsEnumArray[MAX_CHANNEL_OPTIONS];
     static char channelText[MAX_CHANNEL_OPTIONS - 1][12];
