@@ -24,9 +24,9 @@ void updateBatteryLevel(uint8_t level);
 class BluetoothApi
 {
   public:
-    virtual void setup();
-    virtual void shutdown();
-    virtual void clearBonds();
-    virtual bool isConnected();
+    virtual void setup() = 0;
+    virtual void shutdown() = 0;
+    virtual void clearBonds() = 0;
+    virtual bool isConnected() = 0;
     virtual int getRssi() = 0;
 };
